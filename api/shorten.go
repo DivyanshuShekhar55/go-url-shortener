@@ -58,58 +58,6 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) error
 		return fmt.Errorf("invalid error")
 	}
 
-	// enforce https
-	/* TO-DO */
-
-	// check if the user has provided any custom short urls
-	// if yes, proceed,
-	// else, create a new short using the first 6 digits of uuid
-
-	var id string
-	if payload.CustomShort == "" {
-		id = uuid.New().String()[:6]
-	} else {
-		id = payload.CustomShort
-	}
-
-	redis_client := db.CreateClient(0)
-	defer redis_client.Close()
-
-	// check if the user provided short is already in use
-	// collison check for the short url generated
-	// check for colliosn in the redis cache only for faster response
-	var val string
-	val, _ = redis_client.Get(db.Db_ctx, id).Result()
-
-	if val != "" {
-		http.Error(w, "URL short already in use", http.StatusForbidden)
-		return fmt.Errorf("URL short already in use")
-	}
-
-	// next, if user didn't provide a expiry
-	// mak it 24 hours
-	if payload.Expiry == 0 {
-		payload.Expiry = 24
-	}
-
-	// set the new short string
-	err = redis_client.Set(db.Db_ctx, id, payload.URL, payload.Expiry*3600*time.Second).Err()
-
-	if err != nil {
-		http.Error(w, "Unable to connect to server", http.StatusInternalServerError)
-	}
-
-	// everything good
-	// send the success response
-
-	resp := response{
-		URL:             payload.URL,
-		CustomShort:     "",
-		Expiry:          payload.Expiry,
-		XRateRemaining:  10,
-		XRateLimitReset: 30,
-	}
-
 	// implement the rate limiting scenario
 	// assuming that the rate is tracked in a separate client instance
 	// this is because the main redis client is a read-replica , or read-only
@@ -118,6 +66,7 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) error
 	redis_client_2 := db.CreateClient(1)
 	defer redis_client_2.Close()
 
+	var val string
 	user_ip := helper.GetIPClient(w, r)
 	val, err = redis_client_2.Get(db.Db_ctx, user_ip).Result()
 
@@ -152,6 +101,57 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) error
 			http.Error(w, err_msg, http.StatusServiceUnavailable)
 			return fmt.Errorf(err_msg)
 		}
+	}
+
+	// enforce https
+	/* TO-DO */
+
+	// check if the user has provided any custom short urls
+	// if yes, proceed,
+	// else, create a new short using the first 6 digits of uuid
+
+	var id string
+	if payload.CustomShort == "" {
+		id = uuid.New().String()[:6]
+	} else {
+		id = payload.CustomShort
+	}
+
+	redis_client := db.CreateClient(0)
+	defer redis_client.Close()
+
+	// check if the user provided short is already in use
+	// collison check for the short url generated
+	// check for colliosn in the redis cache only for faster response
+	val, _ = redis_client.Get(db.Db_ctx, id).Result()
+
+	if val != "" {
+		http.Error(w, "URL short already in use", http.StatusForbidden)
+		return fmt.Errorf("URL short already in use")
+	}
+
+	// next, if user didn't provide a expiry
+	// mak it 24 hours
+	if payload.Expiry == 0 {
+		payload.Expiry = 24
+	}
+
+	// set the new short string
+	err = redis_client.Set(db.Db_ctx, id, payload.URL, payload.Expiry*3600*time.Second).Err()
+
+	if err != nil {
+		http.Error(w, "Unable to connect to server", http.StatusInternalServerError)
+	}
+
+	// everything good
+	// send the success response
+
+	resp := response{
+		URL:             payload.URL,
+		CustomShort:     "",
+		Expiry:          payload.Expiry,
+		XRateRemaining:  10,
+		XRateLimitReset: 30,
 	}
 
 	return nil

@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func getIPClient(w http.ResponseWriter, r *http.Request) (ip string) {
+func GetIPClient(w http.ResponseWriter, r *http.Request) (ip string) {
 
 	ip = r.RemoteAddr
 

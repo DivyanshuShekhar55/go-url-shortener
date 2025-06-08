@@ -154,6 +154,29 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) error
 		XRateLimitReset: 30,
 	}
 
+	// decrease the tries of user by one
+	redis_client_2.Decr(db.Db_ctx, user_ip)
+	val, err = redis_client_2.Get(db.Db_ctx, user_ip).Result()
+	// assume that if we can't update the number of tries remaining we send err
+	if err != nil {
+		http.Error(w, "Server Unreachable", http.StatusInternalServerError)
+		return err
+	}
+	resp.XRateRemaining, _ = strconv.Atoi(val)
+
+	ttl, err := redis_client_2.TTL(db.Db_ctx, user_ip).Result()
+	if err != nil {
+		http.Error(w, "Server Unreachable", http.StatusInternalServerError)
+		return err
+	}
+	resp.XRateLimitReset = ttl / time.Nanosecond / time.Minute
+
+	resp.CustomShort = os.Getenv("DOMAIN") + "/" + id
+
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resp)
+
 	return nil
 
 }

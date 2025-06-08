@@ -30,13 +30,13 @@ type response struct {
 	XRateLimitReset time.Duration `json:"rate_limit_reset"`
 }
 
-func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) error {
+func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 
 	if err != nil {
 		http.Error(w, "Error reading body", http.StatusBadRequest)
-		return err
+		return
 	}
 
 	defer r.Body.Close()
@@ -46,7 +46,7 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) error
 	err = json.Unmarshal(body, &payload)
 	if err != nil {
 		http.Error(w, "Invalid JSON scheme", http.StatusBadRequest)
-		return err
+		return
 	}
 
 	fmt.Printf("received url is %s", payload.URL)
@@ -55,7 +55,7 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) error
 
 	if !govalidator.IsURL(payload.URL) {
 		http.Error(w, "Invalid URL", http.StatusBadRequest)
-		return fmt.Errorf("invalid error")
+		return
 	}
 
 	// implement the rate limiting scenario
@@ -77,14 +77,14 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) error
 
 		if err != nil {
 			http.Error(w, "Couldn't connect to server", http.StatusInternalServerError)
-			return err
+			return
 		}
 
 	} else {
 		val_to_Int, err := strconv.Atoi(val)
 		if err != nil {
 			http.Error(w, "Invalid Time Limit Detected", http.StatusBadRequest)
-			return err
+			return
 		}
 
 		if val_to_Int <= 0 {
@@ -92,14 +92,14 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) error
 
 			if err != nil {
 				http.Error(w, "couldn't reach server", http.StatusInternalServerError)
-				return err
+				return
 			}
 
 			limit_time_left := limit / time.Nanosecond / time.Minute
 
 			err_msg := "Rate Limit Exceeded, Try Again After" + limit_time_left.String()
 			http.Error(w, err_msg, http.StatusServiceUnavailable)
-			return fmt.Errorf(err_msg)
+			return
 		}
 	}
 
@@ -127,7 +127,7 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) error
 
 	if val != "" {
 		http.Error(w, "URL short already in use", http.StatusForbidden)
-		return fmt.Errorf("URL short already in use")
+		return
 	}
 
 	// next, if user didn't provide a expiry
@@ -141,6 +141,7 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) error
 
 	if err != nil {
 		http.Error(w, "Unable to connect to server", http.StatusInternalServerError)
+		return
 	}
 
 	// everything good
@@ -160,14 +161,14 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) error
 	// assume that if we can't update the number of tries remaining we send err
 	if err != nil {
 		http.Error(w, "Server Unreachable", http.StatusInternalServerError)
-		return err
+		return
 	}
 	resp.XRateRemaining, _ = strconv.Atoi(val)
 
 	ttl, err := redis_client_2.TTL(db.Db_ctx, user_ip).Result()
 	if err != nil {
 		http.Error(w, "Server Unreachable", http.StatusInternalServerError)
-		return err
+		return
 	}
 	resp.XRateLimitReset = ttl / time.Nanosecond / time.Minute
 
@@ -176,7 +177,5 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) error
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
-
-	return nil
 
 }

@@ -19,12 +19,11 @@ func main() {
 	app := application{
 		ctx:  ctx,
 		addr: ":8000",
-		
 	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/url", http.HandlerFunc(app.ResolveURL))
-
+	mux.Handle("/api/v1/", http.HandlerFunc(app.ShortenURL))
 
 	srv := &http.Server{
 		Addr:         app.addr,

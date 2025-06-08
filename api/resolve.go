@@ -1,14 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/DivyanshuShekhar55/go-url-shortener/db"
 	"github.com/redis/go-redis/v9"
 )
 
-func (app *application) ResolveURL(w http.ResponseWriter, r *http.Request) error {
+func (app *application) ResolveURL(w http.ResponseWriter, r *http.Request) {
 
 	// get the short from the url
 	url := r.URL.Query().Get("url")
@@ -22,11 +21,10 @@ func (app *application) ResolveURL(w http.ResponseWriter, r *http.Request) error
 	value, err := redis_client.Get(db.Db_ctx, url).Result()
 	if err == redis.Nil {
 		http.Error(w, "Url not found", http.StatusNotFound)
-		return fmt.Errorf("url not found")
 
 	} else if err != nil {
 		http.Error(w, "Cannot Connect to DB", http.StatusInternalServerError)
-		return err
+
 	}
 	// increment the counter for analytics
 	redis_client_2 := db.CreateClient(1)
@@ -39,5 +37,4 @@ func (app *application) ResolveURL(w http.ResponseWriter, r *http.Request) error
 	// redirect to original URL
 	http.Redirect(w, r, value, 301)
 
-	return nil
 }

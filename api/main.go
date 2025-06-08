@@ -10,24 +10,25 @@ import (
 type application struct {
 	ctx  context.Context
 	addr string
-	mux  http.Handler
 }
 
 func main() {
 
 	ctx := context.Background()
 
-	mux := http.NewServeMux()
-
 	app := application{
 		ctx:  ctx,
 		addr: ":8000",
-		mux:  mux,
+		
 	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/url", http.HandlerFunc(app.ResolveURL))
+
 
 	srv := &http.Server{
 		Addr:         app.addr,
-		Handler:      app.mux,
+		Handler:      mux,
 		WriteTimeout: time.Second * 30,
 		ReadTimeout:  time.Second * 10,
 		IdleTimeout:  time.Minute,

@@ -28,7 +28,7 @@ func InitSchemas(pool *pgxpool.Pool, ctx context.Context) {
 		CREATE TABLE IF NOT EXISTS url_analytics (
 			id SERIAL PRIMARY KEY,
 			CustomShort TEXT NOT NULL,
-			Analytics INT NOT NULL
+			Visitors INT NOT NULL
 		);
 
 	CREATE INDEX IF NOT EXISTS idx_analytics_customshort ON url_analytics(CustomShort);

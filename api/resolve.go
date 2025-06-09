@@ -26,15 +26,14 @@ func (app *application) ResolveURL(w http.ResponseWriter, r *http.Request) {
 
 	}
 	// increment the counter for analytics
-	redis_client_2 := db.CreateAnalyticsClient(0)
-	defer redis_client_2.Close()
+	analytics_db := app.analytics_db
 
 	// even if we fail to increment counter
 	// it should't restrict user from accessing the site, minor error works here
 	
 	// generate a unique key for each url, so we can use it in analytics
 	analytics_key := "analytics:" + url
-	_ = redis_client_2.Incr(db.Db_ctx, analytics_key)
+	_ = analytics_db.Incr(db.Db_ctx, analytics_key)
 
 	// redirect to original URL
 	http.Redirect(w, r, value, 301)

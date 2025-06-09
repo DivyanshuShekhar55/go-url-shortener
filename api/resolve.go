@@ -15,7 +15,7 @@ func (app *application) ResolveURL(w http.ResponseWriter, r *http.Request) {
 	// query the db to find the original URL, if a match is found
 	// increment the redirect counter and redirect to the original URL
 	// else return error message
-	redis_client := db.CreateClient(0)
+	redis_client := db.CreateReadClient(0)
 	defer redis_client.Close()
 
 	value, err := redis_client.Get(db.Db_ctx, url).Result()
@@ -27,7 +27,7 @@ func (app *application) ResolveURL(w http.ResponseWriter, r *http.Request) {
 
 	}
 	// increment the counter for analytics
-	redis_client_2 := db.CreateClient(1)
+	redis_client_2 := db.CreateAnalyticsClient(0)
 	defer redis_client_2.Close()
 
 	// even if we fail to increment counter

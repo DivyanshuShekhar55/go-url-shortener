@@ -60,10 +60,10 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 
 	// implement the rate limiting scenario
 	// assuming that the rate is tracked in a separate client instance
-	// this is because the main redis client is a read-replica , or read-only
-	// this replica will take writes and flush them to the Relational db periodically
+	// this is because the read_redis_client is a read-replica , or read-only
+	// this replica will take writes and flush them to the write_redis_client periodically
 
-	redis_client_2 := db.CreateClient(1)
+	redis_client_2 := db.CreateAnalyticsClient(0)
 	defer redis_client_2.Close()
 
 	var val string
@@ -117,12 +117,13 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 		id = payload.CustomShort
 	}
 
-	redis_client := db.CreateClient(0)
+	redis_client := db.CreateWriteClient(0)
 	defer redis_client.Close()
 
 	// check if the user provided short is already in use
 	// collison check for the short url generated
-	// check for colliosn in the redis cache only for faster response
+	// check for collision in the redis_read_client only for faster response
+	// for now we are checking the write_redis_client only for collisions
 	val, _ = redis_client.Get(db.Db_ctx, id).Result()
 
 	if val != "" {

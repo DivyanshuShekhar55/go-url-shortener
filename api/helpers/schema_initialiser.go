@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func initSchemas(pool *pgxpool.Pool, ctx context.Context) {
+func InitSchemas(pool *pgxpool.Pool, ctx context.Context) {
 	url_schema := `
     CREATE TABLE IF NOT EXISTS url (
         id SERIAL PRIMARY KEY,

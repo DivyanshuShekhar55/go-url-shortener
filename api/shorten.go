@@ -63,17 +63,16 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 	// this is because the read_redis_client is a read-replica , or read-only
 	// this replica will take writes and flush them to the write_redis_client periodically
 
-	redis_client_2 := db.CreateAnalyticsClient(0)
-	defer redis_client_2.Close()
+	analytics_db := app.analytics_db
 
 	var val string
 	user_ip := helper.GetIPClient(w, r)
-	val, err = redis_client_2.Get(db.Db_ctx, user_ip).Result()
+	val, err = analytics_db.Get(db.Db_ctx, user_ip).Result()
 
 	if err == redis.Nil {
 		// no key was found,
 		// insert new user
-		err = redis_client_2.Set(db.Db_ctx, user_ip, os.Getenv("API_Quota"), 30*60*time.Second).Err()
+		err = analytics_db.Set(db.Db_ctx, user_ip, os.Getenv("API_Quota"), 30*60*time.Second).Err()
 
 		if err != nil {
 			http.Error(w, "Couldn't connect to server", http.StatusInternalServerError)
@@ -88,7 +87,7 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if val_to_Int <= 0 {
-			limit, err := redis_client_2.TTL(db.Db_ctx, user_ip).Result()
+			limit, err := analytics_db.TTL(db.Db_ctx, user_ip).Result()
 
 			if err != nil {
 				http.Error(w, "couldn't reach server", http.StatusInternalServerError)
@@ -157,8 +156,8 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// decrease the tries of user by one
-	redis_client_2.Decr(db.Db_ctx, user_ip)
-	val, err = redis_client_2.Get(db.Db_ctx, user_ip).Result()
+	analytics_db.Decr(db.Db_ctx, user_ip)
+	val, err = analytics_db.Get(db.Db_ctx, user_ip).Result()
 	// assume that if we can't update the number of tries remaining we send err
 	if err != nil {
 		http.Error(w, "Server Unreachable", http.StatusInternalServerError)
@@ -166,7 +165,7 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 	}
 	resp.XRateRemaining, _ = strconv.Atoi(val)
 
-	ttl, err := redis_client_2.TTL(db.Db_ctx, user_ip).Result()
+	ttl, err := analytics_db.TTL(db.Db_ctx, user_ip).Result()
 	if err != nil {
 		http.Error(w, "Server Unreachable", http.StatusInternalServerError)
 		return

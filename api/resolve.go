@@ -15,10 +15,9 @@ func (app *application) ResolveURL(w http.ResponseWriter, r *http.Request) {
 	// query the db to find the original URL, if a match is found
 	// increment the redirect counter and redirect to the original URL
 	// else return error message
-	redis_client := db.CreateReadClient(0)
-	defer redis_client.Close()
+	read_db := app.read_db
 
-	value, err := redis_client.Get(db.Db_ctx, url).Result()
+	value, err := read_db.Get(db.Db_ctx, url).Result()
 	if err == redis.Nil {
 		http.Error(w, "Url not found", http.StatusNotFound)
 

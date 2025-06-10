@@ -9,6 +9,10 @@ import (
 
 var Db_ctx = context.Background()
 
+type ReadDB struct {
+	Client *redis.Client
+}
+
 func CreateWriteClient(dbNo int) *redis.Client {
 	redis_db := redis.NewClient(&redis.Options{
 		Addr:     os.Getenv("WRITE_DB_ADDR"),
@@ -32,6 +36,10 @@ func CreateReadClient(dbNo int) *redis.Client {
 	})
 
 	return redis_db
+}
+
+type AnalyticsDB interface {
+	StartAnalyticsFlush(shutdown chan struct{})
 }
 
 func CreateAnalyticsClient(dbNo int) *redis.Client {

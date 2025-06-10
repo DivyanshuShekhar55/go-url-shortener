@@ -116,7 +116,6 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 		id = payload.CustomShort
 	}
 
-	write_db := app.write_db
 	read_db := app.read_db
 
 	// check if the user provided short is already in use
@@ -141,7 +140,7 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// set the new short string
-	id_, err := write_db.InsertURL(db.URL_req{
+	id_, err := app.write_db.InsertURL(db.URL_req{
 		URL:         payload.URL,
 		CustomShort: payload.CustomShort,
 		Expiry:      payload.Expiry * 3600 * time.Second,

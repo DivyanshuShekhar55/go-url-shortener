@@ -1,2 +1,2 @@
 # go-url-shortener
-url shortener with go, fiber, redis and docker
+url shortener with go, postgres, redis and docker

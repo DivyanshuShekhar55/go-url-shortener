@@ -17,7 +17,7 @@ func (app *application) ResolveURL(w http.ResponseWriter, r *http.Request) {
 	// else return error message
 	read_db := app.read_db
 
-	value, err := read_db.Get(db.Db_ctx, url).Result()
+	value, err := read_db.Client.Get(db.Db_ctx, url).Result()
 	if err == redis.Nil {
 		http.Error(w, "Url not found", http.StatusNotFound)
 
@@ -33,7 +33,7 @@ func (app *application) ResolveURL(w http.ResponseWriter, r *http.Request) {
 	
 	// generate a unique key for each url, so we can use it in analytics
 	analytics_key := "analytics:" + url
-	_ = analytics_db.Incr(db.Db_ctx, analytics_key)
+	_ = analytics_db.Client.Incr(db.Db_ctx, analytics_key)
 
 	// redirect to original URL
 	http.Redirect(w, r, value, 301)

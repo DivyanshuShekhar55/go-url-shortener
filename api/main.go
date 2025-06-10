@@ -10,15 +10,14 @@ import (
 	"github.com/DivyanshuShekhar55/go-url-shortener/db"
 	helper "github.com/DivyanshuShekhar55/go-url-shortener/helpers"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
 )
 
 type application struct {
 	ctx  context.Context
 	addr string
 	write_db db.WriteDbImpl
-	analytics_db *redis.Client
-	read_db *redis.Client
+	analytics_db db.AnalyticsDBImpl
+	read_db db.ReadDB
 }
 
 func main() {
@@ -32,14 +31,22 @@ func main() {
 	helper.InitSchemas(pool, ctx)
 	defer pool.Close()
 
-	read_db:= db.CreateReadClient(0)
-	defer read_db.Close()
+	read_db_client:= db.CreateReadClient(0)
+	defer read_db_client.Close()
 
-	analytics_db := db.CreateAnalyticsClient(0)
-	defer analytics_db.Close()
+	analytics_db_client := db.CreateAnalyticsClient(0)
+	defer analytics_db_client.Close()
 
 	write_db := db.WriteDbImpl {
 		 Conn: pool,
+	}
+
+	read_db :=db.ReadDB{
+		Client: read_db_client,
+	}
+
+	analytics_db:=db.AnalyticsDBImpl{
+		Client: analytics_db_client,
 	}
 
 	app := application{

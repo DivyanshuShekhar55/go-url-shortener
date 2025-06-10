@@ -19,6 +19,11 @@ func CreateWriteClient(dbNo int) *redis.Client {
 	return redis_db
 }
 
+type WriteDB interface {
+	InsertURL(req URL_req, ctx context.Context) (int, error)
+	InsertAnalytics(req Analytics_req, ctx context.Context) (int, error)
+}
+
 func CreateReadClient(dbNo int) *redis.Client {
 	redis_db := redis.NewClient(&redis.Options{
 		Addr:     os.Getenv("READ_DB_ADDR"),

@@ -5,19 +5,23 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type url_req struct {
-	URL         string 
-	CustomShort string 
-	Expiry      string 
-	User        string 
+type URL_req struct {
+	URL         string
+	CustomShort string
+	Expiry      string
+	User        string
 }
 
-type analytics_req struct {
-	CustomShort string 
-	Visitors int
+type Analytics_req struct {
+	CustomShort string
+	Visitors    int
 }
 
-func InsertURL(conn *pgxpool.Pool, req url_req, ctx context.Context) (id int, err error) {
+type WriteDbImpl struct {
+	conn *pgxpool.Pool
+}
+
+func (write_db *WriteDbImpl) InsertURL(req URL_req, ctx context.Context) (id int, err error) {
 
 	query := `
 		INSERT INTO url(URL, CustomShort, User, Expiry)
@@ -25,7 +29,7 @@ func InsertURL(conn *pgxpool.Pool, req url_req, ctx context.Context) (id int, er
 		RETURNING id
 	`
 
-	err = conn.QueryRow(ctx, query, req.URL, req.CustomShort, req.User, req.Expiry).Scan(&id)
+	err = write_db.conn.QueryRow(ctx, query, req.URL, req.CustomShort, req.User, req.Expiry).Scan(&id)
 	if err != nil {
 		return -1, err
 	}
@@ -34,7 +38,7 @@ func InsertURL(conn *pgxpool.Pool, req url_req, ctx context.Context) (id int, er
 
 }
 
-func InsertAnalytics(conn *pgxpool.Pool, req analytics_req, ctx context.Context) (id int, err error){
+func (write_db *WriteDbImpl) InsertAnalytics(req Analytics_req, ctx context.Context) (id int, err error) {
 
 	query := `
 		INSERT INTO url_analytics(CustomShort, Visitors)
@@ -42,12 +46,11 @@ func InsertAnalytics(conn *pgxpool.Pool, req analytics_req, ctx context.Context)
 		RETURNING id
 	`
 
-	err = conn.QueryRow(ctx, query, req.CustomShort, req.Visitors).Scan(&id)
+	err = write_db.conn.QueryRow(ctx, query, req.CustomShort, req.Visitors).Scan(&id)
 	if err != nil {
 		return -1, err
 	}
 
 	return id, nil
-
 
 }

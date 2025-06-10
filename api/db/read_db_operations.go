@@ -18,7 +18,7 @@ type Analytics_req struct {
 }
 
 type WriteDbImpl struct {
-	conn *pgxpool.Pool
+	Conn *pgxpool.Pool
 }
 
 func (write_db *WriteDbImpl) InsertURL(req URL_req, ctx context.Context) (id int, err error) {
@@ -29,7 +29,7 @@ func (write_db *WriteDbImpl) InsertURL(req URL_req, ctx context.Context) (id int
 		RETURNING id
 	`
 
-	err = write_db.conn.QueryRow(ctx, query, req.URL, req.CustomShort, req.User, req.Expiry).Scan(&id)
+	err = write_db.Conn.QueryRow(ctx, query, req.URL, req.CustomShort, req.User, req.Expiry).Scan(&id)
 	if err != nil {
 		return -1, err
 	}
@@ -46,7 +46,7 @@ func (write_db *WriteDbImpl) InsertAnalytics(req Analytics_req, ctx context.Cont
 		RETURNING id
 	`
 
-	err = write_db.conn.QueryRow(ctx, query, req.CustomShort, req.Visitors).Scan(&id)
+	err = write_db.Conn.QueryRow(ctx, query, req.CustomShort, req.Visitors).Scan(&id)
 	if err != nil {
 		return -1, err
 	}

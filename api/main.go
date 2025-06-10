@@ -16,7 +16,7 @@ import (
 type application struct {
 	ctx  context.Context
 	addr string
-	write_db *pgxpool.Pool
+	write_db db.WriteDbImpl
 	analytics_db *redis.Client
 	read_db *redis.Client
 }
@@ -38,11 +38,14 @@ func main() {
 	analytics_db := db.CreateAnalyticsClient(0)
 	defer analytics_db.Close()
 
+	write_db := db.WriteDbImpl {
+		 Conn: pool,
+	}
 
 	app := application{
 		ctx:  ctx,
 		addr: ":8000",
-		write_db: pool,
+		write_db: write_db,
 		read_db: read_db,
 		analytics_db: analytics_db,
 	}

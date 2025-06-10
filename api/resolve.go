@@ -29,7 +29,7 @@ func (app *application) ResolveURL(w http.ResponseWriter, r *http.Request) {
 	analytics_db := app.analytics_db
 
 	// even if we fail to increment counter
-	// it should't restrict user from accessing the site, minor error works here
+	// it should't restrict user from accessing the site
 	
 	// generate a unique key for each url, so we can use it in analytics
 	analytics_key := "analytics:" + url

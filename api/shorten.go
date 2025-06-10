@@ -116,14 +116,18 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 		id = payload.CustomShort
 	}
 
-	redis_client := db.CreateWriteClient(0)
-	defer redis_client.Close()
+	write_db := app.write_db
+	read_db := app.read_db
 
 	// check if the user provided short is already in use
 	// collison check for the short url generated
 	// check for collision in the redis_read_client only for faster response
-	// for now we are checking the write_redis_client only for collisions
-	val, _ = redis_client.Get(db.Db_ctx, id).Result()
+
+	val, err = read_db.Get(db.Db_ctx, id).Result()
+
+	if err != nil {
+		// do something
+	}
 
 	if val != "" {
 		http.Error(w, "URL short already in use", http.StatusForbidden)
@@ -137,12 +141,20 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// set the new short string
-	err = redis_client.Set(db.Db_ctx, id, payload.URL, payload.Expiry*3600*time.Second).Err()
+	id_, err := write_db.InsertURL(db.URL_req{
+		URL:         payload.URL,
+		CustomShort: payload.CustomShort,
+		Expiry:      payload.Expiry * 3600 * time.Second,
+		User:        user_ip,
+	}, db.Db_ctx)
+
+	//err = redis_client.Set(db.Db_ctx, id, payload.URL, payload.Expiry*3600*time.Second).Err()
 
 	if err != nil {
 		http.Error(w, "Unable to connect to server", http.StatusInternalServerError)
 		return
 	}
+	fmt.Printf("ID returned from url short generated %d", id_)
 
 	// everything good
 	// send the success response

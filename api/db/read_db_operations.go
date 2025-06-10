@@ -2,13 +2,15 @@ package db
 
 import (
 	"context"
+	"time"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type URL_req struct {
 	URL         string
 	CustomShort string
-	Expiry      string
+	Expiry      time.Duration
 	User        string
 }
 

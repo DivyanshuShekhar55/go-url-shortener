@@ -67,12 +67,12 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 
 	var val string
 	user_ip := helper.GetIPClient(w, r)
-	val, err = analytics_db.Get(db.Db_ctx, user_ip).Result()
+	val, err = analytics_db.Client.Get(db.Db_ctx, user_ip).Result()
 
 	if err == redis.Nil {
 		// no key was found,
 		// insert new user
-		err = analytics_db.Set(db.Db_ctx, user_ip, os.Getenv("API_Quota"), 30*60*time.Second).Err()
+		err = analytics_db.Client.Set(db.Db_ctx, user_ip, os.Getenv("API_Quota"), 30*60*time.Second).Err()
 
 		if err != nil {
 			http.Error(w, "Couldn't connect to server", http.StatusInternalServerError)
@@ -87,7 +87,7 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if val_to_Int <= 0 {
-			limit, err := analytics_db.TTL(db.Db_ctx, user_ip).Result()
+			limit, err := analytics_db.Client.TTL(db.Db_ctx, user_ip).Result()
 
 			if err != nil {
 				http.Error(w, "couldn't reach server", http.StatusInternalServerError)
@@ -122,7 +122,7 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 	// collison check for the short url generated
 	// check for collision in the redis_read_client only for faster response
 
-	val, err = read_db.Get(db.Db_ctx, id).Result()
+	val, err = read_db.Client.Get(db.Db_ctx, id).Result()
 
 	if err != nil {
 		// do something
@@ -167,8 +167,8 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// decrease the tries of user by one
-	analytics_db.Decr(db.Db_ctx, user_ip)
-	val, err = analytics_db.Get(db.Db_ctx, user_ip).Result()
+	analytics_db.Client.Decr(db.Db_ctx, user_ip)
+	val, err = analytics_db.Client.Get(db.Db_ctx, user_ip).Result()
 	// assume that if we can't update the number of tries remaining we send err
 	if err != nil {
 		http.Error(w, "Server Unreachable", http.StatusInternalServerError)
@@ -176,7 +176,7 @@ func (app *application) ShortenURL(w http.ResponseWriter, r *http.Request) {
 	}
 	resp.XRateRemaining, _ = strconv.Atoi(val)
 
-	ttl, err := analytics_db.TTL(db.Db_ctx, user_ip).Result()
+	ttl, err := analytics_db.Client.TTL(db.Db_ctx, user_ip).Result()
 	if err != nil {
 		http.Error(w, "Server Unreachable", http.StatusInternalServerError)
 		return
